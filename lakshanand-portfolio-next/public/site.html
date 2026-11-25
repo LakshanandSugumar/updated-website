@@ -269,6 +269,46 @@ p{margin:0 0 14px;max-width:64ch}
         <h2>Things I&rsquo;ve wired up</h2>
         <div class="grid2">
           <div class="card">
+            <div class="top2"><h3>Robot-Joint Actuator FOC Testbed</h3><span class="st wip">Nov 2026 &ndash; now</span></div>
+            <p class="lab" style="margin-bottom:8px">STM32G474 &middot; Simulation-first</p>
+            <ul class="ul">
+              <li>Built a single robot joint the way humanoid and legged-robot actuators are built: brushless motor, magnetic encoder, field-oriented control and cascaded current / velocity / position loops.</li>
+              <li>Designed and tuned every loop in a plant model, then wrote the same algorithm in hardware-independent C99 and tested it against the model in software-in-the-loop before it drives a motor.</li>
+              <li>In simulation: 1 kHz current loop with 0.15 ms rise; 90&deg; position step settling in 67 ms with 0% overshoot; sine-tracking error cut from 6.6&deg; to <strong>0.037&deg;</strong> with velocity and torque feedforward.</li>
+              <li>Model-based fault detection: a back-EMF residual catches a silent encoder freeze in <strong>3.3 ms</strong>, and a momentum observer detects a collision in <strong>0.8 ms</strong>.</li>
+              <li>CAN protocol plus a Python host stack for 1 kHz logging, encoder calibration, test profiles and a virtual joint. Hardware bring-up is next.</li>
+            </ul>
+            <ul class="chips"><li class="cu">STM32G4</li><li>FOC</li><li>C99</li><li>CAN</li><li>Python</li><li>SIL testing</li></ul>
+          </div>
+          <div class="card">
+            <div class="top2"><h3>Actuator Fault Isolation Paper</h3><span class="st wip">Paper draft</span></div>
+            <p>An IEEE conference paper draft growing out of the FOC testbed. A back-EMF voltage residual isolates encoder faults, and a generalized-momentum observer, trusted only while that residual certifies the encoder, detects collisions and payload changes. Together they separate encoder faults, phase open circuits, collisions and load changes, so the joint can choose the right reaction instead of stopping on every anomaly. Simulation results so far, hardware results to follow. <a href="https://github.com/LakshanandSugumar/actuator-fdi-paper" target="_blank" rel="noopener" style="color:#ffb672">Source on GitHub</a></p>
+            <ul class="chips"><li class="cu">PMSM</li><li>Fault detection</li><li>Momentum observer</li><li>LaTeX</li></ul>
+          </div>
+          <div class="card">
+            <div class="top2"><h3>Siemens S7-1500 Production Cell + OEE Dashboard</h3><span class="st wip">Nov 2026 &ndash; now</span></div>
+            <p class="lab" style="margin-bottom:8px">PLCSIM Advanced &middot; Factory I/O &middot; OPC UA</p>
+            <ul class="ul">
+              <li>Designed a three-station simulated assembly cell run by an S7-1500 with SICAR-style S7-GRAPH step sequences, interlocks, step supervision and Auto / Manual / Setup modes.</li>
+              <li>Wrote the full spec: I/O list, step sequences, modes and alarms, WinCC HMI screens and an OPC UA interface contract.</li>
+              <li>Built a mock S7-1500 OPC UA server that runs the same sequences and node IDs, so the data side works before the PLC does. Pointing it at the real PLC is a URL change.</li>
+              <li>Python collector into SQLite and a Streamlit dashboard for live OEE, downtime Pareto and MTBF / MTTR, covered by end-to-end tests over a real OPC UA socket.</li>
+              <li>TIA Portal build of the GRAPH sequences, HMI and Factory I/O scene comes next.</li>
+            </ul>
+            <ul class="chips"><li class="cu">S7-1500</li><li>S7-GRAPH</li><li>SCL</li><li>WinCC</li><li>OPC UA</li><li>Streamlit</li></ul>
+          </div>
+          <div class="card">
+            <div class="top2"><h3>ExplainDrive: Explainable Driving Planner</h3><span class="st">Nov 2026</span></div>
+            <p class="lab" style="margin-bottom:8px">Python &middot; Closed-loop simulation</p>
+            <ul class="ul">
+              <li>A small, fully inspectable driving stack that reasons about a scene, plans a path with a Frenet sampling planner and explains why in plain English.</li>
+              <li>Closed-loop simulator with occlusion-aware perception and six hard scenarios. On an oncoming bus drifting over the centre line, the reactive baseline collided in every run; the reasoning planner never did.</li>
+              <li>Adaptive fast/slow reasoning cut reasoner calls by <strong>63%</strong> with zero collisions; the stack stays collision-free up to 500 ms of end-to-end latency.</li>
+              <li>Counterfactual faithfulness tests check every explanation: <strong>100%</strong> necessity and completeness over 150 checks.</li>
+            </ul>
+            <ul class="chips"><li class="cu">Motion planning</li><li>Explainable AI</li><li>Python</li><li>NumPy</li></ul>
+          </div>
+          <div class="card">
             <div class="top2"><h3>R6 Recon Amphibot</h3><span class="st">Jan &ndash; May 2026</span></div>
             <p class="lab" style="margin-bottom:8px">EGR 314 &middot; Sensor &amp; HMI subsystem lead</p>
             <ul class="ul">
@@ -527,7 +567,7 @@ $("#copy").addEventListener("click",function(){
 
 
 /* ---------- views telemetry (simulated, deterministic by date) ---------- */
-var RENEWED="2026-09-20",LAUNCH_DAY=Math.floor(Date.UTC(2026,8,20)/86400000),BASE=1400;
+var RENEWED="2026-11-25",LAUNCH_DAY=Math.floor(Date.UTC(2026,8,20)/86400000),BASE=1400;
 function dailyInc(di){var x=Math.sin(di*12.9898+78.233)*43758.5453;x=x-Math.floor(x);return 20+Math.floor(x*26)}
 var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function fmtDate(d){var a=d.split("-");return parseInt(a[2],10)+" "+MON[a[1]-1]+" "+a[0]}
