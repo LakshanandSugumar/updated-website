@@ -43,7 +43,7 @@ h1 em{font-style:normal;color:var(--cu-hot)}
 .socket{position:relative;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,#0a2418 0%,var(--mask-deep) 72%);box-shadow:0 0 0 1px rgba(219,230,211,.35),0 0 0 9px var(--mask-deep),0 0 0 10px rgba(201,162,74,.5),0 0 60px rgba(200,118,58,.16)}
 .socket::before{content:"";position:absolute;inset:-22px;border-radius:50%;border:1px dashed rgba(219,230,211,.28)}
 .socket canvas{position:absolute;inset:0}
-.socket{cursor:zoom-in;z-index:60;will-change:transform}
+.socket{cursor:zoom-in}
 #dive{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:59;transition:opacity .55s ease .7s}
 body.diving #dive{opacity:1;pointer-events:auto}
 body.diving header.top,body.diving .title,body.diving .col,body.diving .hint,body.diving #pcb,body.diving #pulse,body.diving .scrim{opacity:0;transition:opacity .45s ease}
@@ -594,12 +594,33 @@ function enterInventory(){
   if(busy)return;busy=true;
   if(reduce){location.href=INV;return}
   setState(big,"searching");big.boostT=3.4;setHint("Entering the inventory","zooming in");
-  var sk=$("#socket"),r=sk.getBoundingClientRect(),dx=innerWidth/2-(r.left+r.width/2-big.look.px),dy=innerHeight/2-(r.top+r.height/2-big.look.py);
-  var sc=2.4*Math.hypot(innerWidth,innerHeight)/r.width;
-  document.body.classList.add("diving");
-  sk.style.transition="transform 1.35s cubic-bezier(.65,0,.2,1)";
-  requestAnimationFrame(function(){sk.style.transform="translate("+dx+"px,"+dy+"px) scale("+sc+")"});
-  setTimeout(function(){location.href=INV+"?from=globe"},1300);
+  /* redraw the globe as vectors on a full-screen canvas every frame, so it stays sharp at any zoom */
+  var sk=$("#socket"),r=sk.getBoundingClientRect(),S=big.size,R=Math.min(3,window.devicePixelRatio||1),
+      x0=r.left+r.width/2,y0=r.top+r.height/2,W=innerWidth,H=innerHeight,
+      Z=2.6*Math.hypot(W,H)/S,cv=document.createElement("canvas"),c=cv.getContext("2d"),t0=performance.now(),DUR=1400,done=false;
+  cv.id="diveCv";cv.width=Math.round(W*R);cv.height=Math.round(H*R);
+  cv.style.cssText="position:fixed;inset:0;width:100vw;height:100vh;z-index:61;pointer-events:none";
+  document.body.appendChild(cv);document.body.classList.add("diving");sk.style.visibility="hidden";
+  function ease(p){return p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2}
+  function go(){if(done)return;done=true;location.href=INV+"?from=globe"}
+  function fr(now){
+    if(done)return;
+    var p=Math.min(1,(now-t0)/DUR),e=ease(p),z=Math.exp(Math.log(Z)*e),cx=x0+(W/2-x0)*e,cy=y0+(H/2-y0)*e,i,d,l;
+    var f=TO.MODE_FRAMES[big.mode](S,big.t,big.opts);
+    if(big.follow&&(Math.abs(big.look.yaw)>.002||Math.abs(big.look.tilt)>.002))rotFrame(f,big);
+    c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);
+    c.globalAlpha=p>.72?Math.max(0,1-(p-.72)/.28):1;
+    c.setTransform(R*z,0,0,R*z,R*(cx-S/2*z),R*(cy-S/2*z));
+    var g=c.createRadialGradient(S/2,S/2,0,S/2,S/2,S/2);g.addColorStop(0,"#0a2418");g.addColorStop(.72,"#05140d");
+    c.fillStyle=g;c.beginPath();c.arc(S/2,S/2,S/2,0,6.2832);c.fill();
+    c.lineWidth=1/Math.max(1,z*.25);c.strokeStyle="rgba(219,230,211,.35)";c.beginPath();c.arc(S/2,S/2,S/2+.5,0,6.2832);c.stroke();
+    c.strokeStyle="rgba(201,162,74,.5)";c.beginPath();c.arc(S/2,S/2,S/2+9.5,0,6.2832);c.stroke();
+    for(i=0;i<f.lines.length;i++){l=f.lines[i];c.strokeStyle=ink(1-clamp(l.white,0,1),l.a==null?1:l.a);c.lineWidth=l.w;c.beginPath();c.moveTo(l.x1,l.y1);c.lineTo(l.x2,l.y2);c.stroke()}
+    for(i=0;i<f.dots.length;i++){d=f.dots[i];c.fillStyle=ink(1-clamp(d.white,0,1),d.a==null?1:d.a);c.beginPath();c.arc(d.x,d.y,d.r,0,6.2832);c.fill()}
+    if(p<1)requestAnimationFrame(fr);else go();
+  }
+  requestAnimationFrame(fr);
+  setTimeout(go,DUR+600);
 }
 $("#socket").addEventListener("click",enterInventory);
 $("#invCard").addEventListener("click",function(e){
@@ -608,7 +629,7 @@ $("#invCard").addEventListener("click",function(e){
 });
 addEventListener("pageshow",function(e){
   if(!document.body.classList.contains("diving"))return;
-  document.body.classList.remove("diving");var sk=$("#socket");sk.style.transition="none";sk.style.transform="";
+  document.body.classList.remove("diving");var sk=$("#socket");sk.style.visibility="";var dc=$("#diveCv");if(dc)dc.remove();
   busy=false;big.boostT=1;setHint("Pick a trace to follow","eight nets · one board");
 });
 $("#copy").addEventListener("click",function(){
