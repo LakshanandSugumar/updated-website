@@ -602,7 +602,7 @@ function enterInventory(){
   cv.style.cssText="position:fixed;inset:0;width:100vw;height:100vh;z-index:61;pointer-events:none";
   document.body.appendChild(cv);document.body.classList.add("diving");sk.style.visibility="hidden";
   function ease(p){return p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2}
-  function go(){if(done)return;done=true;location.href=INV+"?from=globe"}
+  function go(){if(done)return;done=true;location.href=INV+"?from=globe&t="+Date.now()}
   function fr(now){
     if(done)return;
     var p=Math.min(1,(now-t0)/DUR),e=ease(p),z=Math.exp(Math.log(Z)*e),cx=x0+(W/2-x0)*e,cy=y0+(H/2-y0)*e,i,d,l;
