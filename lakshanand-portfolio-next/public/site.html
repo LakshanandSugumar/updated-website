@@ -407,6 +407,27 @@ p{margin:0 0 14px;max-width:64ch}
         </div>
         <p>Characterized in a Python simulator, then ported to JavaScript with a browser visualizer for schedule inspection. A reference firmware implementation is underway in MPLAB X, and I measured fault-recovery bounds against the analytical model.</p>
         <ul class="chips"><li class="cu">RS-485</li><li>TDMA</li><li>Deterministic scheduling</li><li>PIC18F57Q83</li><li>Python</li><li>JavaScript</li><li>MPLAB X</li></ul>
+        <div class="rule"></div>
+        <h3>Papers</h3>
+        <p>Short summaries of each paper. Follow a link for the full write-up where one is public.</p>
+        <div class="grid2">
+          <a class="card cardlink" href="https://lakshanandsugumar.github.io/projects/actuator-fault-isolation/" target="_blank" rel="noopener">
+            <div class="top2"><h3>Fault isolation in robot joint actuators</h3><span class="st wip">Draft &middot; IEEE conf.</span></div>
+            <p>A robot joint should react differently to a frozen encoder, a collision and a new payload, but a following-error check can&rsquo;t tell them apart. Two signals the motor controller already computes have opposite blind spots, and together they name the fault without adding a sensor. In simulation with up to 30% model error, 299 of 300 injected faults were isolated with no false alarms. Hardware validation on my FOC testbed is next.</p>
+            <ul class="chips"><li class="cu">PMSM</li><li>Fault detection</li><li>Observers</li><li>Simulation</li></ul>
+            <span class="more">Project page and PDF draft &rarr;</span>
+          </a>
+          <div class="card">
+            <div class="top2"><h3>Checking what a physics engine really simulates</h3><span class="st wip">Under review</span></div>
+            <p>Robot controllers and learned policies are trained in physics simulators, yet the same robot and the same command can behave quite differently from one engine to the next, and some settings quietly change the physics. This paper treats the simulator itself as the system under test: it reads only what any engine logs and reports dynamics the user never asked for. Details, code and the paper will be shared once peer review is complete.</p>
+            <ul class="chips"><li class="cu">Simulation</li><li>Rigid-body dynamics</li><li>Contact</li><li>Python</li></ul>
+          </div>
+          <div class="card">
+            <div class="top2"><h3>SDCF: masterless deterministic scheduling</h3><span class="st wip">In preparation</span></div>
+            <p>The write-up of the protocol above for an IEEE industrial-electronics conference: collision-free TDMA slot allocation and peer takeover on a shared RS-485 bus, with no master node and no offline schedule.</p>
+            <ul class="chips"><li class="cu">RS-485</li><li>TDMA</li><li>Fault tolerance</li></ul>
+          </div>
+        </div>
       </article>
 
       <article data-view="skills" hidden>
@@ -477,7 +498,7 @@ var OPTS=[
  {id:"experience",ref:"U2",nm:"Experience",ds:"Robot cells, PLCs, consulting",state:"working",side:"l"},
  {id:"projects",ref:"U3",nm:"Projects",ds:"Amphibot, capstone, balancer",state:"solving",side:"l"},
  {id:"inventory",ref:"U7",nm:"Inventory",ds:"Every robot sim I've collected",state:"searching",side:"l",dive:true},
- {id:"research",ref:"U4",nm:"Research",ds:"SDCF: a bus with no master",state:"connecting",side:"r"},
+ {id:"research",ref:"U4",nm:"Research",ds:"Papers and SDCF",state:"connecting",side:"r"},
  {id:"skills",ref:"U5",nm:"Skills",ds:"Toolchain and certifications",state:"weaving",side:"r"},
  {id:"blog",ref:"U6",nm:"Blog",ds:"Global robotics desk",state:"shaping",side:"r"},
  {id:"contact",ref:"J1",nm:"Contact",ds:"Open the connector",state:"listening",side:"r"}
@@ -666,6 +687,20 @@ var TC="https://techcrunch.com/2026/09/01/waymo-accelerates-robotaxi-expansion-w
     TR="https://www.techradar.com/vehicle-tech/hybrid-electric-vehicles/tesla-cybercab-finally-hits-the-roads-after-two-year-wait-but-im-not-convinced-its-driverless-cars-will-catch-waymo-whatever-the-robotaxi-data-says",
     CNN="https://www.cnn.com/2026/09/03/business/tesla-robotaxi-cybercab-self-driving-cars";
 var POSTS=[
+{d:"2026-11-28",c:"Research",t:"Who checks the simulator?",
+ p:["Almost everything I build starts in simulation: the FOC joint, the fault detector, the pick-and-place arm. I treat the simulator as ground truth, and so does most of robot learning, where policies are trained for millions of steps in an engine before they ever see hardware. That made me ask an uncomfortable question: how do I know the engine is simulating the robot I described, and nothing else?",
+  "It turns out you can check. If you have an independent model of the same robot, you can compare what the engine did, step by step, against what the physics says it should have done. In free motion the two agree to rounding error, so anything left over is physics that someone added: a damping term you didn&rsquo;t set, a different inertia, a default motor still holding the joint. Contact is where engines differ most, and where it matters most for anything that grasps or walks.",
+  "That work is now a paper under peer review, so I am keeping the details for later. The habit it gave me is already useful: before I trust a simulated result, I check that the simulator is doing only what I asked."]},
+{d:"2026-11-27",c:"Research",t:"How do you test a fault detector before the hardware exists?",
+ p:["My joint fault-isolation paper makes claims like &lsquo;no false alarms&rsquo; and &lsquo;faster than a following-error check&rsquo;. With the bench not up yet, the only honest way to back them was a simulation study designed to try to break the detector, not to show it off.",
+  "Three rules shaped it. First, never give the detector the true model: every run drew fresh random errors in the model the detector uses: up to 20% in winding resistance, 10% in inertia and inductance, and 30% in friction. Second, calibrate thresholds once, on a few minutes of normal motion, and then test on runs the calibration never saw: 300 Monte Carlo fault trials and a separate hour of normal motion. Third, hold the baseline to the same rules, so the comparison is fair. Under those rules the detector isolated 299 of 300 faults with no false alarms, while the following-error check, calibrated the same way, alarmed in 22% of normal runs.",
+  "The study also found the limits, which I think matter more. A frozen encoder is invisible to the voltage residual below about 0.5 rad/s at the joint, and that low-speed case caused the one mislabelled fault. The plant also ignores cogging, backlash and compliance. Those are now the first things I will measure on hardware."],
+ src:[["Project page: actuator fault isolation","https://lakshanandsugumar.github.io/projects/actuator-fault-isolation/"],["Paper source on GitHub","https://github.com/LakshanandSugumar/actuator-fdi-paper"]]},
+{d:"2026-11-26",c:"Research",t:"The momentum observer, explained without the math",
+ p:["A robot joint knows two things very well: the torque it is commanding and how fast it is moving. If you also know its inertia and friction, you can predict how its momentum should change. A momentum observer just keeps that prediction running and watches the gap between predicted and measured momentum. When something outside the robot pushes on it, a person, a wall, a heavier part, the gap grows, and its size is an estimate of that outside torque.",
+  "The nice properties are practical ones. It needs no acceleration measurement, so it avoids differentiating a noisy encoder. It has one tuning knob, a gain that trades speed for noise. And it runs in a few lines inside a 1 kHz loop.",
+  "The catch is that it trusts its inputs. If the encoder freezes, the observer sees momentum vanish and reports a huge outside torque that never happened. That is why, in my fault-isolation paper, the observer is only believed while a second residual, built from the motor&rsquo;s back-EMF, says the encoder is healthy. One signal watches the world, the other watches the sensor."],
+ src:[["Project page: actuator fault isolation","https://lakshanandsugumar.github.io/projects/actuator-fault-isolation/"]]},
 {d:"2026-11-25",c:"Research",t:"Is it the sensor or the world? Isolating faults in a robot joint",
  p:["A robot joint that stops on every anomaly is safe but useless, and one that ignores anomalies is dangerous. The right reaction depends on what went wrong. If the encoder froze, the joint should go to a safe state. If it hit something, it should back off. If someone added a payload, it should adapt. A following-error check cannot tell these apart.",
   "My paper draft uses two signals the FOC loop already computes. A back-EMF voltage residual reacts to encoder faults but is blind to load torque. A momentum observer reacts to external torque, and I only trust it while the voltage residual says the encoder is healthy. A short voltage-pulse test then separates collisions, payload changes and phase faults.",
