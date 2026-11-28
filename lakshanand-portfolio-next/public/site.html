@@ -43,6 +43,11 @@ h1 em{font-style:normal;color:var(--cu-hot)}
 .socket{position:relative;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,#0a2418 0%,var(--mask-deep) 72%);box-shadow:0 0 0 1px rgba(219,230,211,.35),0 0 0 9px var(--mask-deep),0 0 0 10px rgba(201,162,74,.5),0 0 60px rgba(200,118,58,.16)}
 .socket::before{content:"";position:absolute;inset:-22px;border-radius:50%;border:1px dashed rgba(219,230,211,.28)}
 .socket canvas{position:absolute;inset:0}
+.socket{cursor:zoom-in;z-index:60;will-change:transform}
+#dive{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:59;transition:opacity .55s ease .7s}
+body.diving #dive{opacity:1;pointer-events:auto}
+body.diving header.top,body.diving .title,body.diving .col,body.diving .hint,body.diving #pcb,body.diving #pulse,body.diving .scrim{opacity:0;transition:opacity .45s ease}
+body.diving .socket::before{opacity:0;transition:opacity .3s}
 .hint{min-height:64px;text-align:center;font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--silk);background:var(--mask-deep);padding:8px 12px;border:1px solid rgba(219,230,211,.18)}
 .hint b{display:block;color:var(--cu-hot);font-weight:500;margin-bottom:2px}
 .hint span::after{content:"_";animation:blink 1s steps(2) infinite;color:var(--cu-hot)}
@@ -159,6 +164,7 @@ p{margin:0 0 14px;max-width:64ch}
 <div class="scrim"></div>
 
 <div id="app">
+  <div id="dive" aria-hidden="true"></div>
   <header class="top">
     <button class="brand" id="brand" aria-label="Back to the start">
       <canvas id="brandOrb" width="20" height="20"></canvas>
@@ -193,7 +199,7 @@ p{margin:0 0 14px;max-width:64ch}
       <div class="col l" id="colL"></div>
       <div class="center">
         <div class="socket" id="socket"><canvas id="bigOrb" role="img" aria-label="Thinking orb"></canvas></div>
-        <div class="hint" id="hint" aria-live="polite"><b>Pick a trace to follow</b><span>six nets · one board</span></div>
+        <div class="hint" id="hint" aria-live="polite"><b>Pick a trace to follow</b><span>eight nets · one board</span></div>
       </div>
       <div class="col r" id="colR"></div>
     </div>
@@ -374,7 +380,7 @@ p{margin:0 0 14px;max-width:64ch}
             <ul class="chips"><li class="cu">IEC 60335</li><li>Automation</li></ul>
             <span class="more">Open project page &rarr;</span>
           </a>
-          <a class="card cardlink" href="https://lakshanandsugumar.github.io/inventory/" target="_blank" rel="noopener">
+          <a class="card cardlink" id="invCard" href="https://lakshanandsugumar.github.io/inventory/">
             <div class="top2"><h3>Laksh&rsquo;s Inventory</h3><span class="st">Nov 2026</span></div>
             <p>My inventory of every robot simulation I could verify online: 214 simulators, benchmarks, robot models, datasets and pretrained policies across arms, humanoids, legged robots, hands, drones, AVs and marine robots, including the full NVIDIA Isaac stack. Each listing has a product photo, an official demo video or clip, and links to the source files and download page.</p>
             <ul class="chips"><li class="cu">Isaac Sim / Lab</li><li>MuJoCo</li><li>ManiSkill</li><li>LeRobot</li><li>Search &amp; filters</li></ul>
@@ -470,6 +476,7 @@ var OPTS=[
  {id:"about",ref:"U1",nm:"About",ds:"Who built this board",state:"breathing",side:"l"},
  {id:"experience",ref:"U2",nm:"Experience",ds:"Robot cells, PLCs, consulting",state:"working",side:"l"},
  {id:"projects",ref:"U3",nm:"Projects",ds:"Amphibot, capstone, balancer",state:"solving",side:"l"},
+ {id:"inventory",ref:"U7",nm:"Inventory",ds:"Every robot sim I've collected",state:"searching",side:"l",dive:true},
  {id:"research",ref:"U4",nm:"Research",ds:"SDCF: a bus with no master",state:"connecting",side:"r"},
  {id:"skills",ref:"U5",nm:"Skills",ds:"Toolchain and certifications",state:"weaving",side:"r"},
  {id:"blog",ref:"U6",nm:"Blog",ds:"Global robotics desk",state:"shaping",side:"r"},
@@ -559,9 +566,10 @@ function setHint(a,b){hintEl.innerHTML="<b>"+a+"</b><span>"+b+"</span>"}
 function hover(p){hovered=p.id;p.orb.boostT=2.4;big.boostT=1.8;setHint(p.ref+" · "+p.nm,p.ds.toLowerCase())}
 function unhover(){
   if(hovered){var p=OPTS.filter(function(x){return x.id===hovered})[0];if(p)p.orb.boostT=1}
-  hovered=null;big.boostT=1;if(!busy)setHint("Pick a trace to follow","six nets · one board");
+  hovered=null;big.boostT=1;if(!busy)setHint("Pick a trace to follow","eight nets · one board");
 }
 function show(id){
+  if(id==="inventory"){goHome();setTimeout(enterInventory,90);return}
   current=id;
   OPTS.forEach(function(p){navBtns[p.id].setAttribute("aria-current",p.id===id?"true":"false")});
   document.querySelectorAll("article[data-view]").forEach(function(a){a.hidden=a.dataset.view!==id});
@@ -569,6 +577,7 @@ function show(id){
   try{window.scrollTo(0,0)}catch(e){}
 }
 function go(id){
+  if(id==="inventory"){enterInventory();return}
   if(busy)return;busy=true;
   var p=OPTS.filter(function(x){return x.id===id})[0];
   setState(big,"composing");big.boostT=2.2;setHint("Routing → "+p.ref,p.nm.toLowerCase()+"…");
@@ -579,6 +588,29 @@ function goHome(){
   try{window.scrollTo(0,0)}catch(e){}
 }
 $("#brand").addEventListener("click",goHome);
+/* dive into the globe, then open the inventory (it continues the zoom on arrival) */
+var INV="https://lakshanandsugumar.github.io/inventory/";
+function enterInventory(){
+  if(busy)return;busy=true;
+  if(reduce){location.href=INV;return}
+  setState(big,"searching");big.boostT=3.4;setHint("Entering the inventory","zooming in");
+  var sk=$("#socket"),r=sk.getBoundingClientRect(),dx=innerWidth/2-(r.left+r.width/2-big.look.px),dy=innerHeight/2-(r.top+r.height/2-big.look.py);
+  var sc=2.4*Math.hypot(innerWidth,innerHeight)/r.width;
+  document.body.classList.add("diving");
+  sk.style.transition="transform 1.35s cubic-bezier(.65,0,.2,1)";
+  requestAnimationFrame(function(){sk.style.transform="translate("+dx+"px,"+dy+"px) scale("+sc+")"});
+  setTimeout(function(){location.href=INV+"?from=globe"},1300);
+}
+$("#socket").addEventListener("click",enterInventory);
+$("#invCard").addEventListener("click",function(e){
+  if(e.metaKey||e.ctrlKey||e.shiftKey||e.button)return;
+  e.preventDefault();goHome();setTimeout(enterInventory,90);
+});
+addEventListener("pageshow",function(e){
+  if(!document.body.classList.contains("diving"))return;
+  document.body.classList.remove("diving");var sk=$("#socket");sk.style.transition="none";sk.style.transform="";
+  busy=false;big.boostT=1;setHint("Pick a trace to follow","eight nets · one board");
+});
 $("#copy").addEventListener("click",function(){
   var t="lakshanandsugumar@gmail.com",btn=this,done=function(){btn.textContent="Copied";setTimeout(function(){btn.textContent="Copy"},1600)};
   try{navigator.clipboard.writeText(t).then(done,function(){btn.textContent="Select & copy"})}catch(e){btn.textContent="Select & copy"}
@@ -1021,7 +1053,7 @@ function frame(now){
     var k=Math.min(1,dt*5);
     L.yaw+=(tx*1.15-L.yaw)*k;L.tilt+=(ty*.85-L.tilt)*k;
     L.px+=(tx*18-L.px)*k;L.py+=(ty*14-L.py)*k;
-    sk.style.transform="translate("+L.px.toFixed(1)+"px,"+L.py.toFixed(1)+"px)";
+    if(!document.body.classList.contains("diving"))sk.style.transform="translate("+L.px.toFixed(1)+"px,"+L.py.toFixed(1)+"px)";
   }
   for(i=0;i<orbs.length;i++){var o=orbs[i];if(o.canvas.offsetParent!==null)drawOrb(o,dt)}
   ptx.setTransform(DPR,0,0,DPR,0,0);ptx.clearRect(0,0,W,H);
